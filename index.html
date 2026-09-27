@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parser Biodata A4</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <button class="icon-btn" id="btnBack" hidden>←</button>
+      <h1 class="app-title" id="pageTitle">Parse Biodata</h1>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="btnList" title="Daftar">☰</button>
+    </div>
+  </header>
+
+  <!-- ===== PAGE 1: ADD ===== -->
+  <main id="pageAdd" class="page">
+    <section class="card">
+      <label class="card-label">📥 Tempel 29 poin biodata di sini</label>
+      <textarea id="rawInput" class="raw-input" rows="9"
+        placeholder="1. Nama : ...&#10;2. Nama Panggilan: ...&#10;3. Tempat, Tanggal Lahir: ...&#10;..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnParse">🔍 Parse Otomatis</button>
+        <button class="btn btn-ghost" id="btnClear">🧹 Clear</button>
+      </div>
+      <div id="parseStatus" class="parse-status" hidden></div>
+    </section>
+
+    <section class="card">
+      <label class="card-label">📷 Foto (landscape)</label>
+      <div class="photo-uploader">
+        <div class="photo-preview" id="photoPreview">
+          <span class="photo-empty">Belum ada foto</span>
+        </div>
+        <div class="photo-actions">
+          <label class="btn btn-primary btn-sm">
+            📷 Ambil / Pilih Foto
+            <input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
+          </label>
+          <button class="btn btn-ghost btn-sm" id="btnRemovePhoto">🗑️ Hapus</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <label class="card-label">📝 Hasil (klik untuk edit kalau salah)</label>
+      <div id="formFields" class="form-fields"></div>
+    </section>
+
+    <div class="bottom-bar">
+      <button class="btn btn-primary btn-block" id="btnPreview">👁️ Preview A4</button>
+    </div>
+  </main>
+
+  <!-- ===== PAGE 2: PREVIEW A4 ===== -->
+  <main id="pagePreview" class="page" hidden>
+    <div class="a4-wrapper">
+      <div class="a4-page" id="a4Page"></div>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn btn-primary" id="btnPrint">🖨️ Cetak / PDF</button>
+      <button class="btn btn-ghost" id="btnBackToEdit">✏️ Edit</button>
+    </div>
+  </main>
+
+  <!-- ===== PAGE 3: LIST (Fase 2) ===== -->
+  <main id="pageList" class="page" hidden>
+    <div class="empty-state">
+      <p>📭 Daftar biodata akan tersedia di Fase 2</p>
+      <p class="muted">Data akan tersimpan di Firebase.</p>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
