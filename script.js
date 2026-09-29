@@ -1,8 +1,8 @@
 /* ============================================================
-   PARSER BIODATA A4 — FASE 1 (Revisi 9)
-   - Fitur foto DIKEMBALIKAN
-   - Tombol Galeri & Kamera DIPISAH (fix HP tidak bisa pilih galeri)
-   - Field 28 (No. HP di #4, tanpa Kata-Kata & Pesan)
+   PARSER BIODATA A4 — FASE 1 (Revisi 10)
+   - Nomor input VALID: 1-28 (Kata-Kata & Pesan DIABAIKAN)
+   - Field "No. HP" di posisi tampilan #4
+   - Foto dikembalikan + tombol Galeri & Kamera terpisah
    - Auto-kapital huruf pertama setiap jawaban
    - Auto-fix ejaan Human Need, urutan tetap
    ============================================================ */
@@ -40,6 +40,8 @@ const FIELDS = [
 ];
 
 // ==== 2. MAPPING NOMOR INPUT (1-29) → KEY ====
+// Nomor 1-28 MASUK. Nomor 29 (Pesan) DIABAIKAN.
+// Nomor 4 input (Jumlah Saudara) tetap, karena No. HP diambil dari baris bawah.
 const INPUT_NUMBER_MAP = {
   1:  "nama",
   2:  "namaPanggilan",
@@ -68,7 +70,8 @@ const INPUT_NUMBER_MAP = {
   25: "golDarah",
   26: "semangatHidup",
   27: "kehilanganSemangat"
-  // 28 & 29 (Kata-Kata & Pesan) DIABAIKAN
+  // Nomor 28 (dulu = Kata-Kata) DIABAIKAN
+  // Nomor 29 (dulu = Pesan) DIABAIKAN
 };
 
 // ==== 3. STATE ====
@@ -78,7 +81,7 @@ const state = {
   photo: null
 };
 
-const DRAFT_KEY = "biodata_draft_v3";
+const DRAFT_KEY = "biodata_draft_v4";
 
 // ==== 4. INIT ====
 document.addEventListener("DOMContentLoaded", () => {
@@ -91,7 +94,7 @@ function bindEvents() {
   document.getElementById("btnParse").addEventListener("click", handleParse);
   document.getElementById("btnClear").addEventListener("click", handleClear);
 
-  // Foto — 2 sumber: galeri & kamera
+  // Foto — 2 sumber
   document.getElementById("btnPickGallery").addEventListener("click", () => {
     document.getElementById("photoGallery").click();
   });
@@ -185,11 +188,13 @@ function parseRaw(text) {
         currentKey = key;
         continue;
       } else {
+        // Nomor 28 & 29 lama (Kata-Kata, Pesan) → diabaikan
         currentKey = null;
         continue;
       }
     }
 
+    // Baris nomor HP standalone
     if (!result.noHP) {
       const phone = extractPhoneNumber(line);
       if (phone) {
@@ -199,11 +204,13 @@ function parseRaw(text) {
       }
     }
 
+    // Baris lanjutan
     if (currentKey) {
       result[currentKey] = (result[currentKey] ? result[currentKey] + " " : "") + line.trim();
     }
   }
 
+  // ==== Post-processing ====
   FIELDS.forEach(f => {
     let v = result[f.key];
     if (typeof v !== "string" || !v) return;
@@ -404,7 +411,7 @@ function renderA4() {
   const a4 = document.getElementById("a4Page");
   a4.innerHTML = "";
 
-  // 1) Foto
+  // Foto
   const photoWrap = document.createElement("div");
   photoWrap.className = "a4-photo-wrap";
   if (state.photo) {
@@ -414,13 +421,13 @@ function renderA4() {
   }
   a4.appendChild(photoWrap);
 
-  // 2) Judul
+  // Judul
   const title = document.createElement("div");
   title.className = "a4-title";
   title.textContent = "BIODATA";
   a4.appendChild(title);
 
-  // 3) Tabel 28 field
+  // Tabel 28 field
   const table = document.createElement("table");
   table.className = "a4-table";
 
