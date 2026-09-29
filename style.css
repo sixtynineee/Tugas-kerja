@@ -162,7 +162,7 @@ textarea.field-input { min-height: 52px; line-height: 1.4; }
 .bottom-bar .btn { flex: 1; max-width: 240px; }
 
 /* ============================================================
-   A4 PREVIEW — v8 (dengan foto, maximize 1 halaman)
+   A4 PREVIEW — v10 (dengan foto, maximize 1 halaman)
    ============================================================ */
 .a4-wrapper {
   padding: 10px;
@@ -189,19 +189,19 @@ textarea.field-input { min-height: 52px; line-height: 1.4; }
 /* Foto */
 .a4-photo-wrap {
   display: flex; justify-content: center;
-  margin-bottom: 3mm;
+  margin-bottom: 2.5mm;
 }
 .a4-photo-wrap img {
-  width: 58mm;
-  height: 43.5mm;                /* 4:3 */
+  width: 55mm;
+  height: 41.25mm;                /* 4:3 */
   object-fit: cover;
   border: 0.3mm solid #ccc;
   border-radius: 1mm;
   display: block;
 }
 .a4-photo-placeholder {
-  width: 58mm;
-  height: 43.5mm;
+  width: 55mm;
+  height: 41.25mm;
   background: #f5f5f5;
   border: 0.3mm dashed #bbb;
   display: flex; align-items: center; justify-content: center;
@@ -213,11 +213,11 @@ textarea.field-input { min-height: 52px; line-height: 1.4; }
 /* Judul BIODATA */
 .a4-title {
   text-align: center;
-  font-size: 16pt;
+  font-size: 15pt;
   font-weight: bold;
   letter-spacing: 3px;
-  margin-bottom: 2mm;
-  padding-bottom: 2mm;
+  margin-bottom: 1.8mm;
+  padding-bottom: 1.8mm;
   border-bottom: 1.3pt solid #333;
   line-height: 1.1;
 }
@@ -235,7 +235,7 @@ textarea.field-input { min-height: 52px; line-height: 1.4; }
   break-inside: avoid;
 }
 .a4-table td {
-  padding: 1.1mm 0;
+  padding: 0.95mm 0;
   vertical-align: top;
   line-height: 1.3;
 }
