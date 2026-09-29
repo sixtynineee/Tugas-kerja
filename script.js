@@ -1,19 +1,21 @@
 /* ============================================================
-   PARSER BIODATA A4 — FASE 1 (Revisi 6)
+   PARSER BIODATA A4 — FASE 1 (Revisi 8)
+   - HAPUS FITUR FOTO total
+   - Hapus "Kata-Kata?" & "Pesan untuk saya?"
    - Tambah field "No. HP" setelah Tempat, Tanggal Lahir
    - No. HP diambil dari baris bawah (baris non-nomor)
-   - Nomor input tetap 1-29, tampilan A4 jadi 1-30
+   - Nomor input tetap 1-29, tampilan A4 jadi 1-28
    - Auto-kapital huruf pertama setiap jawaban
-   - Auto-fix ejaan Human Need (#24), urutan tetap
-   - Semua 30 nomor muat 1 halaman A4
+   - Auto-fix ejaan Human Need, urutan tetap
+   - Semua 28 nomor muat 1 halaman A4
    ============================================================ */
 
-// ==== 1. DEFINISI FIELD TAMPILAN (30 item, No. HP di #4) ====
+// ==== 1. DEFINISI FIELD TAMPILAN (28 item, No. HP di #4) ====
 const FIELDS = [
   { no: 1,  label: "Nama",                                                    key: "nama",                type: "text" },
   { no: 2,  label: "Nama Panggilan",                                          key: "namaPanggilan",       type: "text" },
   { no: 3,  label: "Tempat, Tanggal Lahir",                                   key: "ttl",                 type: "text" },
-  { no: 4,  label: "No. HP",                                                  key: "noHP",                type: "text" }, // NEW
+  { no: 4,  label: "No. HP",                                                  key: "noHP",                type: "text" },
   { no: 5,  label: "Jumlah Saudara",                                          key: "jumlahSaudara",       type: "text" },
   { no: 6,  label: "Anak ke",                                                 key: "anakKe",              type: "text" },
   { no: 7,  label: "Status",                                                  key: "status",              type: "text" },
@@ -37,13 +39,10 @@ const FIELDS = [
   { no: 25, label: "Human Need",                                              key: "humanNeed",           type: "textarea" },
   { no: 26, label: "Golongan Darah",                                          key: "golDarah",            type: "text" },
   { no: 27, label: "Hal apa saja yang membuatmu semangat dalam hidup?",       key: "semangatHidup",       type: "textarea" },
-  { no: 28, label: "Hal apa saja yang membuatmu kehilangan semangat dalam hidup?", key: "kehilanganSemangat", type: "textarea" },
-  { no: 29, label: "Kata-Kata?",                                              key: "kataKata",            type: "textarea" },
-  { no: 30, label: "Pesan untuk saya?",                                       key: "pesan",               type: "textarea" }
+  { no: 28, label: "Hal apa saja yang membuatmu kehilangan semangat dalam hidup?", key: "kehilanganSemangat", type: "textarea" }
 ];
 
 // ==== 2. MAPPING NOMOR INPUT (1-29) → KEY ====
-// Nomor input dari user tetap 1-29 (No. HP tidak bernomor, dikirim di bawah)
 const INPUT_NUMBER_MAP = {
   1:  "nama",
   2:  "namaPanggilan",
@@ -71,19 +70,17 @@ const INPUT_NUMBER_MAP = {
   24: "humanNeed",
   25: "golDarah",
   26: "semangatHidup",
-  27: "kehilanganSemangat",
-  28: "kataKata",
-  29: "pesan"
+  27: "kehilanganSemangat"
+  // 28 & 29 (Kata-Kata & Pesan) DIABAIKAN
 };
 
 // ==== 3. STATE ====
 const state = {
   raw: "",
-  data: {},
-  photo: null
+  data: {}
 };
 
-const DRAFT_KEY = "biodata_draft_v1";
+const DRAFT_KEY = "biodata_draft_v2";
 
 // ==== 4. INIT ====
 document.addEventListener("DOMContentLoaded", () => {
@@ -95,8 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
 function bindEvents() {
   document.getElementById("btnParse").addEventListener("click", handleParse);
   document.getElementById("btnClear").addEventListener("click", handleClear);
-  document.getElementById("photoInput").addEventListener("change", handlePhoto);
-  document.getElementById("btnRemovePhoto").addEventListener("click", handleRemovePhoto);
   document.getElementById("btnPreview").addEventListener("click", showPreview);
   document.getElementById("btnPrint").addEventListener("click", () => window.print());
   document.getElementById("btnBackToEdit").addEventListener("click", showAdd);
@@ -108,9 +103,6 @@ function bindEvents() {
    NORMALIZER UMUM
    ============================================================ */
 
-/**
- * Kapitalkan huruf pertama jika karakter pertama adalah huruf.
- */
 function capitalizeFirst(str) {
   if (!str) return str;
   const trimmed = str.replace(/^\s+/, "");
@@ -122,12 +114,6 @@ function capitalizeFirst(str) {
   return trimmed;
 }
 
-/**
- * Normalisasi Human Need (#24):
- * - Hapus "(diurutkan)"
- * - Perbaiki ejaan typo → tulisan baku
- * - Urutan tetap sesuai input asli
- */
 const HUMAN_NEED_MAP = {
   "growh": "Growth",
   "growth": "Growth",
@@ -159,23 +145,10 @@ function normalizeHumanNeed(text) {
   return fixed.join(", ");
 }
 
-/**
- * Ekstrak nomor HP dari baris yang HANYA berisi nomor.
- * Return: string nomor yang sudah dinormalisasi (hapus spasi/dash/titik),
- * atau null kalau baris tidak murni nomor HP.
- *
- * Contoh yang match:
- *   "081234567890"
- *   "0812-3456-7890"
- *   "+62 812 3456 7890"
- *   "0812 3456 7890"
- */
 function extractPhoneNumber(line) {
   const trimmed = line.trim();
-  // Wajib hanya karakter: + ( ) digit spasi - . (min 9, max 20)
   if (!/^[\+\(\)\d\s\-\.]{9,20}$/.test(trimmed)) return null;
   const cleaned = trimmed.replace(/[\s\-\(\)\.]/g, "");
-  // Wajib pola HP Indonesia: 08xxx atau +628xxx atau 628xxx
   if (/^(\+?62|0)8\d{7,13}$/.test(cleaned)) return cleaned;
   return null;
 }
@@ -199,25 +172,26 @@ function parseRaw(text) {
     if (m) {
       const no = parseInt(m[1], 10);
       const value = m[3].trim();
-      const key = INPUT_NUMBER_MAP[no];  // pakai mapping input 1-29
+      const key = INPUT_NUMBER_MAP[no];
       if (key) {
         result[key] = value;
         currentKey = key;
         continue;
-      }
-    }
-
-    // Cek baris nomor HP standalone (belum ada yang keisi)
-    if (!result.noHP) {
-      const phone = extractPhoneNumber(line);
-      if (phone) {
-        result.noHP = phone;
-        currentKey = null;   // jangan gabung ke field sebelumnya
+      } else {
+        currentKey = null;
         continue;
       }
     }
 
-    // Baris lanjutan
+    if (!result.noHP) {
+      const phone = extractPhoneNumber(line);
+      if (phone) {
+        result.noHP = phone;
+        currentKey = null;
+        continue;
+      }
+    }
+
     if (currentKey) {
       result[currentKey] = (result[currentKey] ? result[currentKey] + " " : "") + line.trim();
     }
@@ -232,7 +206,6 @@ function parseRaw(text) {
       v = normalizeHumanNeed(v);
     }
 
-    // No. HP: jangan kapital (biar tetap angka), tapi trim
     if (f.key === "noHP") {
       result[f.key] = v.trim();
       return;
@@ -286,12 +259,10 @@ function handleClear() {
   if (!confirm("Hapus semua data yang sedang diisi?")) return;
   state.raw = "";
   state.data = {};
-  state.photo = null;
   localStorage.removeItem(DRAFT_KEY);
 
   document.getElementById("rawInput").value = "";
   document.getElementById("parseStatus").hidden = true;
-  renderPhotoPreview();
 
   FIELDS.forEach(f => {
     const input = document.querySelector(`.field-input[data-key="${f.key}"]`);
@@ -300,48 +271,6 @@ function handleClear() {
     updateRowStatus(input.closest(".field-row"), "");
   });
   window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function handlePhoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (evt) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 800;
-      let w = img.width, h = img.height;
-      if (w >= h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-      else if (h > w && h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, w, h);
-
-      state.photo = canvas.toDataURL("image/jpeg", 0.85);
-      renderPhotoPreview();
-      saveDraft();
-    };
-    img.src = evt.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function handleRemovePhoto() {
-  state.photo = null;
-  document.getElementById("photoInput").value = "";
-  renderPhotoPreview();
-  saveDraft();
-}
-
-function renderPhotoPreview() {
-  const el = document.getElementById("photoPreview");
-  if (state.photo) {
-    el.innerHTML = `<img src="${state.photo}" alt="Foto">`;
-  } else {
-    el.innerHTML = `<span class="photo-empty">Belum ada foto</span>`;
-  }
 }
 
 /* ============================================================
@@ -422,29 +351,19 @@ function showList() {
 }
 
 /* ============================================================
-   RENDER A4
+   RENDER A4 — v8 (TANPA FOTO)
    ============================================================ */
 function renderA4() {
   const a4 = document.getElementById("a4Page");
   a4.innerHTML = "";
 
-  // 1) Foto
-  const photoWrap = document.createElement("div");
-  photoWrap.className = "a4-photo-wrap";
-  if (state.photo) {
-    photoWrap.innerHTML = `<img src="${state.photo}" alt="Foto">`;
-  } else {
-    photoWrap.innerHTML = `<div class="a4-photo-placeholder">FOTO</div>`;
-  }
-  a4.appendChild(photoWrap);
-
-  // 2) Judul
+  // 1) Judul BIODATA (langsung di atas)
   const title = document.createElement("div");
   title.className = "a4-title";
   title.textContent = "BIODATA";
   a4.appendChild(title);
 
-  // 3) Tabel 30 field
+  // 2) Tabel 28 field
   const table = document.createElement("table");
   table.className = "a4-table";
 
@@ -482,8 +401,7 @@ function saveDraft() {
   try {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       raw: state.raw,
-      data: state.data,
-      photo: state.photo
+      data: state.data
     }));
   } catch (e) {
     console.warn("saveDraft failed:", e);
@@ -497,10 +415,8 @@ function loadDraft() {
     const d = JSON.parse(raw);
     state.raw = d.raw || "";
     state.data = d.data || {};
-    state.photo = d.photo || null;
 
     document.getElementById("rawInput").value = state.raw;
-    renderPhotoPreview();
 
     FIELDS.forEach(f => {
       const input = document.querySelector(`.field-input[data-key="${f.key}"]`);
