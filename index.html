@@ -22,7 +22,7 @@
   <!-- ===== PAGE 1: ADD ===== -->
   <main id="pageAdd" class="page">
     <section class="card">
-      <label class="card-label">📥 Tempel 27 poin biodata di sini</label>
+      <label class="card-label">📥 Tempel biodata di sini</label>
       <textarea id="rawInput" class="raw-input" rows="10"
         placeholder="1. Nama : ...&#10;2. Nama Panggilan: ...&#10;3. Tempat, Tanggal Lahir: ...&#10;...&#10;&#10;Nomor HP ditaruh di baris paling bawah (tanpa nomor)."></textarea>
       <div class="btn-row">
@@ -30,6 +30,23 @@
         <button class="btn btn-ghost" id="btnClear">🧹 Clear</button>
       </div>
       <div id="parseStatus" class="parse-status" hidden></div>
+    </section>
+
+    <section class="card">
+      <label class="card-label">📷 Foto (landscape)</label>
+      <div class="photo-uploader">
+        <div class="photo-preview" id="photoPreview">
+          <span class="photo-empty">Belum ada foto</span>
+        </div>
+        <div class="photo-actions">
+          <button type="button" class="btn btn-primary btn-sm" id="btnPickGallery">🖼️ Pilih dari Galeri</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnPickCamera">📷 Ambil dari Kamera</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnRemovePhoto">🗑️ Hapus</button>
+        </div>
+        <!-- 2 input file terpisah: galeri & kamera -->
+        <input type="file" id="photoGallery" accept="image/*" hidden>
+        <input type="file" id="photoCamera" accept="image/*" capture="environment" hidden>
+      </div>
     </section>
 
     <section class="card">
