@@ -1,16 +1,13 @@
 /* ============================================================
-   PARSER BIODATA A4 — FASE 1 (Revisi 8)
-   - HAPUS FITUR FOTO total
-   - Hapus "Kata-Kata?" & "Pesan untuk saya?"
-   - Tambah field "No. HP" setelah Tempat, Tanggal Lahir
-   - No. HP diambil dari baris bawah (baris non-nomor)
-   - Nomor input tetap 1-29, tampilan A4 jadi 1-28
+   PARSER BIODATA A4 — FASE 1 (Revisi 9)
+   - Fitur foto DIKEMBALIKAN
+   - Tombol Galeri & Kamera DIPISAH (fix HP tidak bisa pilih galeri)
+   - Field 28 (No. HP di #4, tanpa Kata-Kata & Pesan)
    - Auto-kapital huruf pertama setiap jawaban
    - Auto-fix ejaan Human Need, urutan tetap
-   - Semua 28 nomor muat 1 halaman A4
    ============================================================ */
 
-// ==== 1. DEFINISI FIELD TAMPILAN (28 item, No. HP di #4) ====
+// ==== 1. DEFINISI FIELD TAMPILAN (28 item) ====
 const FIELDS = [
   { no: 1,  label: "Nama",                                                    key: "nama",                type: "text" },
   { no: 2,  label: "Nama Panggilan",                                          key: "namaPanggilan",       type: "text" },
@@ -77,10 +74,11 @@ const INPUT_NUMBER_MAP = {
 // ==== 3. STATE ====
 const state = {
   raw: "",
-  data: {}
+  data: {},
+  photo: null
 };
 
-const DRAFT_KEY = "biodata_draft_v2";
+const DRAFT_KEY = "biodata_draft_v3";
 
 // ==== 4. INIT ====
 document.addEventListener("DOMContentLoaded", () => {
@@ -92,6 +90,18 @@ document.addEventListener("DOMContentLoaded", () => {
 function bindEvents() {
   document.getElementById("btnParse").addEventListener("click", handleParse);
   document.getElementById("btnClear").addEventListener("click", handleClear);
+
+  // Foto — 2 sumber: galeri & kamera
+  document.getElementById("btnPickGallery").addEventListener("click", () => {
+    document.getElementById("photoGallery").click();
+  });
+  document.getElementById("btnPickCamera").addEventListener("click", () => {
+    document.getElementById("photoCamera").click();
+  });
+  document.getElementById("photoGallery").addEventListener("change", handlePhoto);
+  document.getElementById("photoCamera").addEventListener("change", handlePhoto);
+  document.getElementById("btnRemovePhoto").addEventListener("click", handleRemovePhoto);
+
   document.getElementById("btnPreview").addEventListener("click", showPreview);
   document.getElementById("btnPrint").addEventListener("click", () => window.print());
   document.getElementById("btnBackToEdit").addEventListener("click", showAdd);
@@ -102,7 +112,6 @@ function bindEvents() {
 /* ============================================================
    NORMALIZER UMUM
    ============================================================ */
-
 function capitalizeFirst(str) {
   if (!str) return str;
   const trimmed = str.replace(/^\s+/, "");
@@ -159,9 +168,7 @@ function extractPhoneNumber(line) {
 function parseRaw(text) {
   const result = {};
   const lines = text.split(/\r?\n/);
-
   const LINE_RE = /^\s*(\d+)\s*[\.\)]\s*(.+?)\s*[:\?]\s*(.*)$/;
-
   let currentKey = null;
 
   for (const rawLine of lines) {
@@ -197,19 +204,12 @@ function parseRaw(text) {
     }
   }
 
-  // ==== Post-processing ====
   FIELDS.forEach(f => {
     let v = result[f.key];
     if (typeof v !== "string" || !v) return;
 
-    if (f.key === "humanNeed") {
-      v = normalizeHumanNeed(v);
-    }
-
-    if (f.key === "noHP") {
-      result[f.key] = v.trim();
-      return;
-    }
+    if (f.key === "humanNeed") v = normalizeHumanNeed(v);
+    if (f.key === "noHP") { result[f.key] = v.trim(); return; }
 
     v = capitalizeFirst(v);
     result[f.key] = v;
@@ -259,10 +259,14 @@ function handleClear() {
   if (!confirm("Hapus semua data yang sedang diisi?")) return;
   state.raw = "";
   state.data = {};
+  state.photo = null;
   localStorage.removeItem(DRAFT_KEY);
 
   document.getElementById("rawInput").value = "";
   document.getElementById("parseStatus").hidden = true;
+  document.getElementById("photoGallery").value = "";
+  document.getElementById("photoCamera").value = "";
+  renderPhotoPreview();
 
   FIELDS.forEach(f => {
     const input = document.querySelector(`.field-input[data-key="${f.key}"]`);
@@ -271,6 +275,49 @@ function handleClear() {
     updateRowStatus(input.closest(".field-row"), "");
   });
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w >= h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      else if (h > w && h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+
+      state.photo = canvas.toDataURL("image/jpeg", 0.85);
+      renderPhotoPreview();
+      saveDraft();
+    };
+    img.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleRemovePhoto() {
+  state.photo = null;
+  document.getElementById("photoGallery").value = "";
+  document.getElementById("photoCamera").value = "";
+  renderPhotoPreview();
+  saveDraft();
+}
+
+function renderPhotoPreview() {
+  const el = document.getElementById("photoPreview");
+  if (state.photo) {
+    el.innerHTML = `<img src="${state.photo}" alt="Foto">`;
+  } else {
+    el.innerHTML = `<span class="photo-empty">Belum ada foto</span>`;
+  }
 }
 
 /* ============================================================
@@ -351,19 +398,29 @@ function showList() {
 }
 
 /* ============================================================
-   RENDER A4 — v8 (TANPA FOTO)
+   RENDER A4
    ============================================================ */
 function renderA4() {
   const a4 = document.getElementById("a4Page");
   a4.innerHTML = "";
 
-  // 1) Judul BIODATA (langsung di atas)
+  // 1) Foto
+  const photoWrap = document.createElement("div");
+  photoWrap.className = "a4-photo-wrap";
+  if (state.photo) {
+    photoWrap.innerHTML = `<img src="${state.photo}" alt="Foto">`;
+  } else {
+    photoWrap.innerHTML = `<div class="a4-photo-placeholder">FOTO</div>`;
+  }
+  a4.appendChild(photoWrap);
+
+  // 2) Judul
   const title = document.createElement("div");
   title.className = "a4-title";
   title.textContent = "BIODATA";
   a4.appendChild(title);
 
-  // 2) Tabel 28 field
+  // 3) Tabel 28 field
   const table = document.createElement("table");
   table.className = "a4-table";
 
@@ -401,7 +458,8 @@ function saveDraft() {
   try {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       raw: state.raw,
-      data: state.data
+      data: state.data,
+      photo: state.photo
     }));
   } catch (e) {
     console.warn("saveDraft failed:", e);
@@ -415,8 +473,10 @@ function loadDraft() {
     const d = JSON.parse(raw);
     state.raw = d.raw || "";
     state.data = d.data || {};
+    state.photo = d.photo || null;
 
     document.getElementById("rawInput").value = state.raw;
+    renderPhotoPreview();
 
     FIELDS.forEach(f => {
       const input = document.querySelector(`.field-input[data-key="${f.key}"]`);
